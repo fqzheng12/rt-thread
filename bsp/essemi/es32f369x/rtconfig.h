@@ -161,7 +161,7 @@
 
 /* UART Drivers */
 
-#define BSP_USING_UART3
+#define BSP_USING_UART0
 
 /* SPI Drivers */
 
