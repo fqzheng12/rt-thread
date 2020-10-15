@@ -56,11 +56,11 @@ static rt_err_t es32f3x_configure(struct rt_serial_device *serial, struct serial
 
 #ifdef BSP_USING_UART1
     gpio_initstructure.func = GPIO_FUNC_3;
-    ald_gpio_init(GPIOC, GPIO_PIN_10, &gpio_initstructure);
+    ald_gpio_init(GPIOC, GPIO_PIN_0, &gpio_initstructure);
 
     /* Initialize rx pin ,the same as txpin except mode */
     gpio_initstructure.mode = GPIO_MODE_INPUT;
-    ald_gpio_init(GPIOC, GPIO_PIN_11, &gpio_initstructure);
+    ald_gpio_init(GPIOC, GPIO_PIN_1, &gpio_initstructure);
 
     ald_cmu_perh_clock_config(CMU_PERH_UART1, ENABLE);
 #endif /* uart1 gpio init */
