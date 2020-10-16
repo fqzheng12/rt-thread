@@ -18,6 +18,7 @@
 #define IDLE_THREAD_STACK_SIZE 256
 #define RT_DEBUG
 #define RT_DEBUG_COLOR
+//#define RT_USING_POSIX//自己加的
 
 /* Inter-Thread communication */
 

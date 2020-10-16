@@ -43,7 +43,8 @@ void NVIC_Configuration(void)
 void  SystemClock_Config(void)
 {
     /* hosc 12MHz, from hosc/3 pll to 96MHz */
-    ald_cmu_pll1_config(CMU_PLL1_INPUT_HOSC_3, CMU_PLL1_OUTPUT_96M);
+    ald_cmu_pll1_config(CMU_PLL1_INPUT_HRC_6, CMU_PLL1_OUTPUT_96M);//改成了内部时钟
+	  //ald_cmu_pll1_config(CMU_PLL1_INPUT_HOSC_3, CMU_PLL1_OUTPUT_96M);
     /*  SYSCLK 96MHz */
     ald_cmu_clock_config(CMU_CLOCK_PLL1, 96000000);
     ald_cmu_perh_clock_config(CMU_PERH_ALL, ENABLE);

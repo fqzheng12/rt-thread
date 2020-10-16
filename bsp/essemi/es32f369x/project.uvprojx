@@ -365,7 +365,7 @@
               <MiscControls></MiscControls>
               <Define>ES32F36xx</Define>
               <Undefine></Undefine>
-              <IncludePath>applications;.;..\..\..\libcpu\arm\common;..\..\..\libcpu\arm\cortex-m3;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\spi;..\..\..\components\drivers\include;..\..\..\components\drivers\include;drivers;..\..\..\components\finsh;.;..\..\..\include;libraries\CMSIS\Device\EastSoft\ES32F36xx\Include;libraries\CMSIS\Include;libraries\ES32F36xx_ALD_StdPeriph_Driver\Include</IncludePath>
+              <IncludePath>applications;.;..\..\..\libcpu\arm\common;..\..\..\libcpu\arm\cortex-m3;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\include;..\..\..\components\drivers\spi;..\..\..\components\drivers\include;..\..\..\components\drivers\include;drivers;..\..\..\components\finsh;.;..\..\..\include;libraries\CMSIS\Device\EastSoft\ES32F36xx\Include;libraries\CMSIS\Include;libraries\ES32F36xx_ALD_StdPeriph_Driver\Include;.\CAN_protocol</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -412,6 +412,11 @@
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>applications\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>can_bsp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\CAN_protocol\can_bsp.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1007,6 +1012,16 @@
               <FileName>timeslice_sample.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\kernel-sample-0.1.0\timeslice_sample.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>doc</GroupName>
+          <Files>
+            <File>
+              <FileName>readme.txt</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\readme.txt</FilePath>
             </File>
           </Files>
         </Group>
