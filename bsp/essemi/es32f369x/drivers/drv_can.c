@@ -319,7 +319,8 @@ static int _can_sendmsg(struct rt_can_device *can, const void *buf, rt_uint32_t 
         }
         else
         {
-            h_can->perh->TxMailBox[box_num].TXID |= (txheader.ext << CAN_TXID0_EXID_POSS) | txheader.type | txheader.rtr;
+            h_can->perh->TxMailBox[box_num].TXID |= (txheader.ext << CAN_TXID0_EXID_POSS) | (txheader.type<<2)| txheader.rtr;
+//					 h_can->perh->TxMailBox[box_num].TXID |= 0X7FFFFFFC;
         }
         /* Set up the DLC */
         h_can->perh->TxMailBox[box_num].TXFCON = pmsg->len & 0x0FU;
