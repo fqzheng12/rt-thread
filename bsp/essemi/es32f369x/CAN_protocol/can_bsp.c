@@ -38,15 +38,15 @@ static void can_rx_thread(void *parameter)//can接收入口函数
     rt_device_set_rx_indicate(can_dev, can_rx_call);
 
 #ifdef RT_CAN_USING_HDR//下个阶段弄清楚
-    struct rt_can_filter_item items[5] =
+    struct rt_can_filter_item items[1] =
     {
-        RT_CAN_FILTER_ITEM_INIT(0x100, 0, 0, 1, 0x700, RT_NULL, RT_NULL), /* std,match ID:0x100~0x1ff,hdr ? - 1,??????? */
-        RT_CAN_FILTER_ITEM_INIT(0x300, 0, 0, 1, 0x700, RT_NULL, RT_NULL), /* std,match ID:0x300~0x3ff,hdr ? - 1 */
-        RT_CAN_FILTER_ITEM_INIT(0x211, 0, 0, 1, 0x7ff, RT_NULL, RT_NULL), /* std,match ID:0x211,hdr ? - 1 */
-        RT_CAN_FILTER_STD_INIT(0x486, RT_NULL, RT_NULL),                  /* std,match ID:0x486,hdr ? - 1 */
-        {0x555, 0, 0, 1, 0x7ff, 7,}                                       /* std,match ID:0x555,hdr ? 7,???? 7 ???? */
-    };
-    struct rt_can_filter_config cfg = {5, 1, items}; /* ??? 5 ???? */
+//        RT_CAN_FILTER_ITEM_INIT(0x100, 0, 0, 1, 0x700, RT_NULL, RT_NULL), /* std,match ID:0x100~0x1ff,hdr 为 - 1,设置默认过滤表 */
+//        RT_CAN_FILTER_ITEM_INIT(0x300, 0, 0, 1, 0x700, RT_NULL, RT_NULL), /* std,match ID:0x300~0x3ff,hdr ? - 1 */
+//        RT_CAN_FILTER_ITEM_INIT((0x55<<18), 0, 0, 0, (0x7ff<<21 | 6), RT_NULL, RT_NULL), /* std,match ID:0x211,hdr 为 - 1 */
+//        RT_CAN_FILTER_STD_INIT(0x486, RT_NULL, RT_NULL),                  /* std,match ID:0x486,hdr 为 - 1 */
+        {0x02, 1, 0, 0, 0x3f<<3, 0} //不使用默认过滤表，必须先设置0号过滤表，最后一位，mask得移位3位，底层驱动没有做                                 
+    };//以上过滤表实现扩展帧后6位必须为0x02的帧才会被接收，假设控制器目标地址为0x02，即帧目标地址为控制器的帧才能被接收。
+    struct rt_can_filter_config cfg = {1, 1, items}; /* ??? 5 ???? */
     /* ??????? */
     res = rt_device_control(can_dev, RT_CAN_CMD_SET_FILTER, &cfg);
     RT_ASSERT(res == RT_EOK);
@@ -113,9 +113,10 @@ int can_sample(int argc, char *argv[])
         rt_kprintf("create can_rx thread failed!\n");
     }
 
-    msg.id = 0xFF7FF;              /* ID ? 0x78 */
-    msg.ide = RT_CAN_EXTID;     /* ???? */
-    msg.rtr = RT_CAN_DTR;       /* ??? */
+    msg.id = 0x7FF;              /* ID ? 0x78 */
+//    msg.ide = RT_CAN_EXTID;     /* 扩展帧 */
+		msg.ide = 0;     /* 扩展帧 */
+    msg.rtr = RT_CAN_DTR;       /* 数据帧 */
     msg.len = 8;                /* ????? 8 */
     /* ???? 8 ???? */
     msg.data[0] = 0x00;

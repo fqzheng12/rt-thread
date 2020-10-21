@@ -604,9 +604,11 @@ int rt_hw_can_init(void)
     /* config default filter */
     can_filter_t filter = {0};
     filter.id_high = 0x0000;
-    filter.id_low = 0x0000;
+		filter.id_low = 0x0000;
+//    filter.id_low = 0x2<<3;//表示扩展帧的id最后必须是2才会接收
     filter.mask_id_high = 0x0000;
-    filter.mask_id_low = 0x0000;
+		filter.mask_id_low = 0x0000;
+//    filter.mask_id_low = 0x3f<<3;//设置了根据id，最后的六位必须为000010，才会接收，其它数据全部过滤掉，目标地址为控制器的帧才接收
     filter.fifo = CAN_FILTER_FIFO0;
     filter.number = 0;
     filter.mode = CAN_FILTER_MODE_MASK;

@@ -19,6 +19,7 @@
 #define RT_DEBUG
 #define RT_DEBUG_COLOR
 //#define RT_USING_POSIX//自己加的
+#define RT_CAN_USING_HDR
 
 /* Inter-Thread communication */
 
