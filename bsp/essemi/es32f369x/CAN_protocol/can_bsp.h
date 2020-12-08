@@ -9,16 +9,7 @@
 #include <rtthread.h>
 
 
-void can_emergency(void);//紧急信息处理
-void can_exception(void);//报警信息处理
-void can_control_cmd(void);//控制命令处理
-void can_drive_staus(void);//驱动状态信息处理
-void can_device_message(void);//设备信息处理
-void can_up_download(void);//上传下载数据函数
-void can_upgrade(void);//升级相关命令函数
 
-
-//int timer1_sample(void);
 
 typedef struct 
 {
@@ -30,6 +21,26 @@ typedef struct
     rt_uint8_t can_addr : 6;//源节点地址
    
 }rt_can_ExtendID;
+
+void can_emergency(int);//紧急信息处理
+//void can_exception(int);//报警信息处理
+void can_control_cmd(int);//控制命令处理
+void can_drive_staus(int);//驱动状态信息处理
+//void can_device_message(void);//设备信息处理
+//void can_up_download(void);//上传下载数据函数
+void can_upgrade(int);//升级相关命令函数
+void can_diagnose(int);//诊断
+
+//int timer1_sample(void);
+
+int can_sample(int argc, char *argv[]);
+
+
+
+
+
+
+void can_rx_deal(rt_can_ExtendID *);//接收信息帧ID处理函数
 
 
 typedef struct 
@@ -58,10 +69,9 @@ typedef struct
 
 
 
-
-
-
-
+int can_var_read(rt_can_var *);//变量读处理函数
+int can_var_write(rt_can_var *);//变量写处理函数
+void can_send(int cmd,int func,int dest,int len ,int data[]);//主动发送函数
 #endif
 
 

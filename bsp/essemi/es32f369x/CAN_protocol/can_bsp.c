@@ -24,37 +24,45 @@ static rt_device_t can_dev;  //can句柄
 struct rt_can_msg rxmsg = {0};
 struct rt_can_msg txmsg = {0};//发送帧
 
-rt_can_ExtendID ExtendID = {0};
+
+rt_can_ExtendID rxExtendID = {0};
+rt_can_ExtendID txExtendID = {0};
+//rt_can_ExtendID *pExtendID = &ExtendID;//定义一个指针
+
 rt_can_var can_var={0};
+rt_can_var *pcan_var  = &can_var;
 
 
-
+/* 定时器的控制块 */
 static void timeout1(void *parameter)//定时释放发送信号量
 {
-	
-	
-	 rt_sem_release(&tx_sem);
-
+//	int count = 1;
+	  
+	  rt_sem_release(&tx_sem);
+   
 //      return RT_EOK;
 // 
 }
 
-static void can_tx_thread(void *parameter)//can接收入口函数
+
+/* can发送入口函数
+{ */
+static void can_tx_thread(void *parameter)//
 {
   while(1)
 	{
 	rxmsg.hdr = -1;
         /* 等待接收完成后回调函数释放的信号量 */
     rt_sem_take(&tx_sem, RT_WAITING_FOREVER);//获取一次信号量，信号量减一
-	rt_size_t  size;
+	  rt_size_t  size;
 //    rt_kprintf("periodic timer is timeout %d\n", cnt);
 /*111000(56，状态信息)|0（预留）|011（单帧）|111111（功能码）|000001（目标节点地址）|000010|（源节点地址）=0x70ff042*/
     txmsg.id = 0xE0FF042;              /* ID ? 0x78 */
 //    msg.ide = RT_CAN_EXTID;     /* 扩展帧 */
-	txmsg.ide = 1;     /* 扩展帧 */
+	  txmsg.ide = 1;     /* 扩展帧 */
     txmsg.rtr = RT_CAN_DTR;       /* 数据帧 */
-    txmsg.len = 8;                /* ????? 8 */
-    /* ???? 8 ???? */
+    txmsg.len = 8;                /* */
+    /* */
 //    txmsg.data[0] = ;
     can_var.Drive_V5v=0x99;
     can_var.Drive_Vbus=0xaa;
@@ -70,15 +78,21 @@ static void can_tx_thread(void *parameter)//can接收入口函数
     txmsg.data[5] = can_var.Drive_temp;
     txmsg.data[6] = (can_var.Motor_speed>>8);
     txmsg.data[7] = can_var.Motor_speed;
-    /* ???? CAN ?? */
+    /* CAN */
     size = rt_device_write(can_dev, 0, &txmsg, sizeof(txmsg));
     if (size == 0)
     {
         rt_kprintf("can dev write data failed!\n");
     }
+		
+		int data[8]={0xff,0xee,12,55,33,76,23,45};
+	  can_send(2,1,5,8,data);
 	}	
 
 }
+
+
+
 
 
 static rt_err_t can_rx_call(rt_device_t dev, rt_size_t size)
@@ -90,14 +104,17 @@ static rt_err_t can_rx_call(rt_device_t dev, rt_size_t size)
 }
 
 
+/*can接收入口函数*/
 
 static void can_rx_thread(void *parameter)//can接收入口函数
 {
+	
 //    int i;
     rt_err_t res;
     
 	rt_size_t  size;	
 
+//	rt_can_ExtendID *pExtendID = &ExtendID;//定义一个指针
     /* 设置回调函数 */
     rt_device_set_rx_indicate(can_dev, can_rx_call);
 
@@ -114,20 +131,20 @@ static void can_rx_thread(void *parameter)//can接收入口函数
 
     while (1)
     {
-        /* hdr ?? - 1,????? uselist 链表读取数据 */
+        /* hdr - 1, uselist 链表读取数据 */
         rxmsg.hdr = -1;
         /* 等待接收完成后回调函数释放的信号量 */
         rt_sem_take(&rx_sem, RT_WAITING_FOREVER);//获取一次信号量，信号量减一
-        /* ? CAN 有信号量了之后，读取一帧数据 */
+        /* CAN 有信号量了之后，读取一帧数据 */
         rt_device_read(can_dev, 0, &rxmsg, sizeof(rxmsg));
 			if(rxmsg.ide==1)//如果是扩展帧的话就把帧ID按协议分解
 			{
-				ExtendID.can_cmd=((rxmsg.id>>22)&0x7f);//右移22位留下高7位。E0FF042
-				ExtendID.can_kbit=((rxmsg.id>>21)&0x01);//右移21位留下高1位。
-				ExtendID.can_fflag=((rxmsg.id>>18)&0x7);//右移18位留下高3位。
-				ExtendID.can_func=((rxmsg.id>>12)&0x3f);//右移12位留下高6位。 
-				ExtendID.can_dest=((rxmsg.id>>6)&0x3f);//右移6位留下高6位。
-				ExtendID.can_addr=(rxmsg.id&0x3f);//留下高6位。
+				rxExtendID.can_cmd=((rxmsg.id>>22)&0x7f);//右移22位留下高7位。E0FF042
+				rxExtendID.can_kbit=((rxmsg.id>>21)&0x01);//右移21位留下高1位。
+				rxExtendID.can_fflag=((rxmsg.id>>18)&0x7);//右移18位留下高3位。
+				rxExtendID.can_func=((rxmsg.id>>12)&0x3f);//右移12位留下高6位。 
+				rxExtendID.can_dest=((rxmsg.id>>6)&0x3f);//右移6位留下高6位。
+				rxExtendID.can_addr=(rxmsg.id&0x3f);//留下高6位。
 
 					  
 					 
@@ -136,52 +153,25 @@ static void can_rx_thread(void *parameter)//can接收入口函数
            rt_kprintf("ID:%x\n", rxmsg.id);
 					 rt_kprintf("\n");
 
-           rt_kprintf("%2x ", ExtendID.can_cmd);//打出来验证下分解的有没有问题
-				   rt_kprintf("%2x ", ExtendID.can_kbit);
-				   rt_kprintf("%2x ", ExtendID.can_fflag);
-				   rt_kprintf("%2x ", ExtendID.can_func);
-				   rt_kprintf("%2x ", ExtendID.can_dest);
-				   rt_kprintf("%2x ", ExtendID.can_addr);
+           rt_kprintf("%2x ", rxExtendID.can_cmd);//打出来验证下分解的有没有问题
+				   rt_kprintf("%2x ", rxExtendID.can_kbit);
+				   rt_kprintf("%2x ", rxExtendID.can_fflag);
+				   rt_kprintf("%2x ", rxExtendID.can_func);
+				   rt_kprintf("%2x ", rxExtendID.can_dest);
+				   rt_kprintf("%2x ", rxExtendID.can_addr);
            rt_kprintf("%2x ", rxmsg.data[7]);
 
            rt_kprintf("\n");
-					 switch(ExtendID.can_cmd)
-					   {
-						 case(11):
-						 can_emergency();
-						 break;
-						 
-						 case(26):
-						 can_exception();
-						 break;
-						 
-						 case(41):
-						 can_control_cmd();
-						 break;
-						 
-						 case(56):
-						 can_drive_staus();
-						 break;
-						 
-						 case(71):
-						 can_device_message();
-						 break;
-						 
-						 case(86):
-						 can_up_download();
-						 break;
-						 
-						 case(101):
-						 can_upgrade();
-						 break;
-					   }
+					 can_rx_deal(&rxExtendID);//将id分解后进行处理
+
 					 }
-			rxmsg.id=ExtendID.can_cmd<<22|ExtendID.can_kbit<<21|(ExtendID.can_fflag|0x04)<<18|ExtendID.can_func<<12|ExtendID.can_addr<<6|ExtendID.can_dest;
+			rxmsg.id=rxExtendID.can_cmd<<22|rxExtendID.can_kbit<<21|(rxExtendID.can_fflag|0x04)<<18|rxExtendID.can_func<<12|rxExtendID.can_addr<<6|rxExtendID.can_dest;
 			 size = rt_device_write(can_dev, 0, &rxmsg, sizeof(txmsg));
     if (size == 0)
     {
         rt_kprintf("can dev write data failed!\n");
-    }			
+    }	
+		
     }
 }
 
@@ -216,11 +206,11 @@ int can_sample(int argc, char *argv[])
     rt_sem_init(&tx_sem, "tx_sem", 0, RT_IPC_FLAG_FIFO);
 		
 
-    /* ???????????? CAN ?? */
+    /* CAN */
     res = rt_device_open(can_dev, RT_DEVICE_FLAG_INT_TX | RT_DEVICE_FLAG_INT_RX);
 		res = rt_device_control(can_dev, RT_CAN_CMD_SET_BAUD, (void *)CAN500kBaud);
     RT_ASSERT(res == RT_EOK);
-    /* ???????? */
+    /*  */
     can_rx = rt_thread_create("can_rx", can_rx_thread, RT_NULL, 1024, 25, 10);//动态线程
     if (can_rx != RT_NULL)
     {
@@ -259,7 +249,7 @@ MSH_CMD_EXPORT(can_sample, can device sample);
 
 
 /*报警信息处理*/
-void can_emergency(void)
+void can_emergency(int func)
 {
 //
 }
@@ -267,10 +257,10 @@ void can_emergency(void)
 
 
 /*紧急信息处理*/
-void can_exception(void)
-{
-//
-}
+//void can_exception(void)
+//{
+////
+//}
 
 
 
@@ -278,9 +268,9 @@ void can_exception(void)
 
 
 /*控制信息处理*/
-void can_control_cmd(void)
+void can_control_cmd(int func)
 {
-	switch(ExtendID.can_func)
+	switch(func)
 		case(0x3f)://如果是电机实时控制寄存器，进行寄存器值更新
 //		can_var.Cmd_Iq=(((rxmsg.data[6]&0xff)<<8)&(rxmsg.data[7]&0xff));
 			can_var.Cmd_Iq=(rxmsg.data[6]<<8)|rxmsg.data[7];
@@ -309,23 +299,150 @@ void can_control_cmd(void)
 
 
 /*驱动状态信息处理*/
-void can_drive_staus(void)
+void can_drive_staus(int func)
 {
+//	 rt_err_t res;
+    
+	rt_size_t  size;	
+  can_var.Drive_Ibus = 0xff;
+	struct rt_can_msg ack_txmsg = rxmsg;//回复帧
+	ack_txmsg.id = rxExtendID.can_cmd<<22|rxExtendID.can_kbit<<21|(rxExtendID.can_fflag|0x04)<<18|rxExtendID.can_func<<12|rxExtendID.can_addr<<6|rxExtendID.can_dest;
+	switch(func)
+	{
+		case(0x01):
+			
+		ack_txmsg.data[7]=can_var.Drive_Ibus;
+		
+	
+	
+	}
+		
+	
+	
+	
+	
+	size = rt_device_write(can_dev, 0, &ack_txmsg, sizeof(ack_txmsg));
+    if (size == 0)
+    {
+        rt_kprintf("can dev write data failed!\n");
+    }			
 //
 }
-/*设备信息处理*/
-void can_device_message(void)
-{
-//
-}
-/*上传下载信息处理*/
-void can_up_download(void)
-{
-//
-}
+///*设备信息处理*/
+//void can_device_message(void)
+//{
+////
+//}
+///*上传下载信息处理*/
+//void can_up_download(void)
+//{
+////
+//}
 /*升级信息处理*/
-void can_upgrade(void)
+void can_upgrade(int func)
+{
+//
+	
+	
+	
+	
+	
+}
+
+void can_diagnose(int func)
 {
 //
 }
+
+/*扩展帧ID处理函数*/
+void can_rx_deal(rt_can_ExtendID *rxExtendID)//
+{
+	
+      switch(rxExtendID->can_cmd)
+					   {
+						 case(11):
+						 can_emergency(rxExtendID->can_func);
+						 break;
+						 
+//						 case(26):
+//						 can_exception();
+//						 break;
+						 
+						 case(41):
+						 can_control_cmd(rxExtendID->can_func);
+						 break;
+						 
+						 case(56):
+						 can_drive_staus(rxExtendID->can_func);
+						 break;
+						 
+//						 case(71):
+//						 can_device_message();
+//						 break;
+//						 
+//						 case(86):
+//						 can_up_download();
+//						 break;
+						 
+						 case(101):
+						 can_upgrade(rxExtendID->can_func);
+						 break;
+						 
+						 case(86):
+						 can_diagnose(rxExtendID->can_func);
+						 break;
+						 
+              }
+}
+
+
+
+
+
+int can_var_read(rt_can_var *can_var)//变量读处理函数
+{
+	
+	
+	
+	return 0;
+}
+
+
+int can_var_write(rt_can_var *can_var)//变量写处理函数
+{
+	
+	
+	return 0;
+}
+
+
+
+
+void can_send(int cmd,int func,int dest,int len,int data[])
+{
+int i;
+//	int len = 8;
+  rt_size_t  size;	
+  can_var.Drive_Ibus = 0xff;
+	struct rt_can_msg txmsg=rxmsg;//回复帧
+	txmsg.ide=1;
+	txmsg.len=len;
+  rt_can_ExtendID ExtendID={cmd,1,0,func,2,dest};
+	txmsg.id = ExtendID.can_cmd<<22|ExtendID.can_kbit<<21|(ExtendID.can_fflag|0x04)<<18|ExtendID.can_func<<12|ExtendID.can_addr<<6|ExtendID.can_dest;
+	for(i=0;i<=len;i++) txmsg.data[i]=data[i];
+//     { 
+	
+//			 txmsg.data[0]=0;
+//			 txmsg.data[1]=0xff;
+//     };
+	
+	
+	
+	size = rt_device_write(can_dev, 0, &txmsg, sizeof(txmsg));
+    if (size == 0)
+    {
+        rt_kprintf("can dev write data failed!\n");
+    }			
+
+}	
 
