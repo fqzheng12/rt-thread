@@ -56,8 +56,8 @@ static void can_tx_thread(void *parameter)//
     rt_sem_take(&tx_sem, RT_WAITING_FOREVER);//获取一次信号量，信号量减一
 	  rt_size_t  size;
 //    rt_kprintf("periodic timer is timeout %d\n", cnt);
-/*111000(56，状态信息)|0（预留）|011（单帧）|111111（功能码）|000001（目标节点地址）|000010|（源节点地址）=0x70ff042*/
-    txmsg.id = 0xE0FF042;              /* ID ? 0x78 */
+/*111(7，报警信息)|00（单帧）|111111111111（7F功能码）|000001（1目标节点地址）|000010|（2源节点地址）=0x1CFFF042*/
+    txmsg.id = 0x1CFFF042;              /* ID ? 0x78 */
 //    msg.ide = RT_CAN_EXTID;     /* 扩展帧 */
 	  txmsg.ide = 1;     /* 扩展帧 */
     txmsg.rtr = RT_CAN_DTR;       /* 数据帧 */
@@ -86,7 +86,7 @@ static void can_tx_thread(void *parameter)//
     }
 		
 		int data[8]={0xff,0xee,12,55,33,76,23,45};
-	  can_send(2,1,5,8,data);
+	  can_send(1,0,0XFFF,7,data);//实现的是主动发单帧功能
 	}	
 
 }
@@ -139,10 +139,10 @@ static void can_rx_thread(void *parameter)//can接收入口函数
         rt_device_read(can_dev, 0, &rxmsg, sizeof(rxmsg));
 			if(rxmsg.ide==1)//如果是扩展帧的话就把帧ID按协议分解
 			{
-				rxExtendID.can_cmd=((rxmsg.id>>22)&0x7f);//右移22位留下高7位。E0FF042
-				rxExtendID.can_kbit=((rxmsg.id>>21)&0x01);//右移21位留下高1位。
-				rxExtendID.can_fflag=((rxmsg.id>>18)&0x7);//右移18位留下高3位。
-				rxExtendID.can_func=((rxmsg.id>>12)&0x3f);//右移12位留下高6位。 
+				rxExtendID.can_cmd=((rxmsg.id>>26)&0x07);//右移26位留下高3位。E0FF042
+//				rxExtendID.can_kbit=((rxmsg.id>>21)&0x01);//右移21位留下高1位。
+				rxExtendID.can_fflag=((rxmsg.id>>24)&0x3);//右移24位留下高2位。
+				rxExtendID.can_func=((rxmsg.id>>12)&0x0fff);//右移12位留下高12位。 
 				rxExtendID.can_dest=((rxmsg.id>>6)&0x3f);//右移6位留下高6位。
 				rxExtendID.can_addr=(rxmsg.id&0x3f);//留下高6位。
 
@@ -154,7 +154,7 @@ static void can_rx_thread(void *parameter)//can接收入口函数
 					 rt_kprintf("\n");
 
            rt_kprintf("%2x ", rxExtendID.can_cmd);//打出来验证下分解的有没有问题
-				   rt_kprintf("%2x ", rxExtendID.can_kbit);
+//				   rt_kprintf("%2x ", rxExtendID.can_kbit);
 				   rt_kprintf("%2x ", rxExtendID.can_fflag);
 				   rt_kprintf("%2x ", rxExtendID.can_func);
 				   rt_kprintf("%2x ", rxExtendID.can_dest);
@@ -165,7 +165,7 @@ static void can_rx_thread(void *parameter)//can接收入口函数
 					 can_rx_deal(&rxExtendID);//将id分解后进行处理
 
 					 }
-			rxmsg.id=rxExtendID.can_cmd<<22|rxExtendID.can_kbit<<21|(rxExtendID.can_fflag|0x04)<<18|rxExtendID.can_func<<12|rxExtendID.can_addr<<6|rxExtendID.can_dest;
+			rxmsg.id=rxExtendID.can_cmd<<26|rxExtendID.can_fflag<<24|rxExtendID.can_func<<12|rxExtendID.can_addr<<6|rxExtendID.can_dest;
 			 size = rt_device_write(can_dev, 0, &rxmsg, sizeof(txmsg));
     if (size == 0)
     {
@@ -306,7 +306,7 @@ void can_drive_staus(int func)
 	rt_size_t  size;	
   can_var.Drive_Ibus = 0xff;
 	struct rt_can_msg ack_txmsg = rxmsg;//回复帧
-	ack_txmsg.id = rxExtendID.can_cmd<<22|rxExtendID.can_kbit<<21|(rxExtendID.can_fflag|0x04)<<18|rxExtendID.can_func<<12|rxExtendID.can_addr<<6|rxExtendID.can_dest;
+	ack_txmsg.id = rxExtendID.can_cmd<<26|rxExtendID.can_fflag<<24|rxExtendID.can_func<<12|rxExtendID.can_addr<<6|rxExtendID.can_dest;
 	switch(func)
 	{
 		case(0x01):
@@ -339,11 +339,13 @@ void can_drive_staus(int func)
 ////
 //}
 /*升级信息处理*/
-void can_upgrade(int func)
+void can_upgrade(int fflag,int func)
 {
-//
-	
-	
+    int index = func>>8,subindex =(func>>4)&0xf,count = func&0xf,data[4] ={0xff,0xff,0xff,0xff};//将索引取出
+	  if(index==0xf)can_send(5,11,5,3,data);
+	  rt_kprintf("%2x ", index);
+		rt_kprintf("%2x ", subindex);
+		rt_kprintf("%2x ", count);
 	
 	
 	
@@ -384,8 +386,8 @@ void can_rx_deal(rt_can_ExtendID *rxExtendID)//
 //						 can_up_download();
 //						 break;
 						 
-						 case(101):
-						 can_upgrade(rxExtendID->can_func);
+						 case(7):
+						 can_upgrade(rxExtendID->can_fflag,rxExtendID->can_func);
 						 break;
 						 
 						 case(86):
@@ -427,8 +429,8 @@ int i;
 	struct rt_can_msg txmsg=rxmsg;//回复帧
 	txmsg.ide=1;
 	txmsg.len=len;
-  rt_can_ExtendID ExtendID={cmd,1,0,func,2,dest};
-	txmsg.id = ExtendID.can_cmd<<22|ExtendID.can_kbit<<21|(ExtendID.can_fflag|0x04)<<18|ExtendID.can_func<<12|ExtendID.can_addr<<6|ExtendID.can_dest;
+  rt_can_ExtendID ExtendID={cmd,0,func,2,dest};
+	txmsg.id = ExtendID.can_cmd<<26|ExtendID.can_fflag<<24|ExtendID.can_func<<12|ExtendID.can_addr<<6|ExtendID.can_dest;
 	for(i=0;i<=len;i++) txmsg.data[i]=data[i];
 //     { 
 	
