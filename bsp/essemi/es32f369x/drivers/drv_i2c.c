@@ -72,7 +72,7 @@ static void _i2c_init(void)
     ald_i2c_reset(&_h_i2c1);
     ald_i2c_init(&_h_i2c1);
     /* PA05->I2C1_SCL, PA06->I2C1_SDA */
-    ald_gpio_init(GPIOA, GPIO_PIN_5 | GPIO_PIN_6, &gpio_instruct);
+    ald_gpio_init(GPIOA, GPIO_PIN_10 | GPIO_PIN_11, &gpio_instruct);
 #endif
 }
 

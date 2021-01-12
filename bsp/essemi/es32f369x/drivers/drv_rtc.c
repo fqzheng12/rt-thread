@@ -118,8 +118,8 @@ int rt_hw_rtc_init(void)
     rtc_init_t rtc_initstruct;
 
     /* enable external 32.768kHz */
-    CMU_LOSC_ENABLE();
-    ald_cmu_losc_safe_config(ENABLE);
+//    CMU_LOSC_ENABLE();
+//    ald_cmu_losc_safe_config(ENABLE);
     /* set default time */
     RTC_UNLOCK();
     WRITE_REG(RTC->TIME, 0x134251);
